@@ -1,0 +1,79 @@
+plugins {
+	id 'org.springframework.boot' version '2.3.2.RELEASE'
+	id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+	id 'java'
+	id 'org.openapi.generator' version '4.2.3'
+	id 'maven-publish'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+	mavenCentral()
+}
+
+openApiGenerate {
+	generatorName = "java"
+	library = "resttemplate"
+//    inputSpec = "http://localhost:8082/openapi.json"
+	inputSpec = "$rootDir/src/main/resources/openapi.json".toString()
+	outputDir = "$rootDir".toString() + "/openApiGeneratedClient"
+	apiPackage = "com.thoughtworks.api"
+	invokerPackage = "com.thoughtworks.invoker"
+	modelPackage = "com.thoughtworks.model"
+	modelFilesConstrainedTo = []
+	configOptions = [
+			dateLibrary            : "java8",
+			java8                  : "true",
+			hideGenerationTimestamp: "true",
+			artifactId             : "open-api-generated-client"
+
+	]
+}
+
+project(":open-api-generated-client"){
+	apply plugin: 'java'
+	apply plugin: 'maven-publish'
+
+	publishing {
+		publications {
+			github(MavenPublication) {
+				groupId = 'com.thoughtworks'
+				artifactId = 'openApiClient'
+				version = '1.1-SNAPSHOT'
+				from(components.java)
+			}
+		}
+		repositories {
+			maven {
+				name = "open-api-client"
+				url = uri("https://maven.pkg.github.com/pranali1997/open-api-client")
+				credentials {
+					username = getProjectProperty('gpusername')
+					password = getProjectProperty('gptoken')
+				}
+			}
+		}
+	}
+}
+
+String getProjectProperty(String propertyName) {
+	String propertyValue = "null"
+	if (hasProperty(propertyName)) {
+		propertyValue = this.properties[propertyName]
+	}
+	return propertyValue
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+}
+
+test {
+	useJUnitPlatform()
+}
